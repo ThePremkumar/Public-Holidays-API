@@ -1,34 +1,25 @@
-import express from "express";
-import cookieParser from "cookie-parser";
+import express from 'express';
+import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
 
-import connectToDatabase from "./database/mongodb.js";
-import { PORT } from './config/env.js';
+import authRoutes from './routes/auth.js';
+import holidayRoutes from './routes/holidays.js';
 
-import userRouter from "./routes/user.routes.js";
-import authRouter from "./routes/auth.routes.js";
-import apiRouter from "./routes/api.routes.js";
-
+dotenv.config();
 const app = express();
+app.use(bodyParser.json());
 
-// express have build in middlewares
-app.use(express.json());  // this allows our app to handle json data sent in request or API
-app.use(express.urlencoded({extended: false})); //this helps us to process the form data sent via html forms in a simple format.
-app.use(cookieParser());
+// Connect MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error(err));
 
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/holidays', holidayRoutes);
 
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/users', userRouter);
-app.use('/api/v1/apis', apiRouter);
-
-app.get('/',(req, res) =>{
-    res.send('Welcome to the Subsciption Tracker API!');
-});
-
-
-app.listen(PORT,async () =>  {
-    console.log(`Public Holidays Tracker API is running on http://localhost:${PORT}`);
-
-    await connectToDatabase();
-});
-
-export default app;
+app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));
